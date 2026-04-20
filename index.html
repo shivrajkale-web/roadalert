@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+<!-- FIREBASE INITIALIZATION -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+<script>
+  // ✅ Firebase Configuration - UPDATED
+  const firebaseConfig = {
+    apiKey: "AIzaSyDBNgZ87_U_3zJ-xK_IyPAgrNNHLRwJapA",
+    authDomain: "roadalert-bdf60.firebaseapp.com",
+    projectId: "roadalert-bdf60",
+    storageBucket: "roadalert-bdf60.firebasestorage.app",
+    messagingSenderId: "545933579660",
+    appId: "1:545933579660:web:33daf1eee2447d8d89b2a9",
+    databaseURL: "https://roadalert-bdf60-default-rtdb.firebaseio.com"
+  };
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const auth     = firebase.auth();
+  const db       = firebase.database();
+  const storage  = firebase.storage();
+
+  // ✅ Check auth state when page loads
+  let isAuthReady = false;
+  let currentAuthUser = null;
+  
+  auth.onAuthStateChanged((user) => {
+    isAuthReady = true;
+    if (user) {
+      console.log('✅ User already logged in:', user.email);
+      currentAuthUser = user;
+    } else {
+      console.log('No user logged in');
+      currentAuthUser = null;
+    }
+  });
+
+  console.log('✅ Firebase Connected Successfully!');
+</script>
+
+<script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Road Damage Report Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange: #E86A2E;
+    --orange-dark: #B84E18;
+    --orange-light: #FDF0E8;
+    --black: #1A1A18;
+    --gray-dark: #3A3A36;
+    --gray-mid: #7A7A74;
+    --gray-light: #EAEAE4;
+    --white: #FAFAF7;
+    --success: #2D7A4F;
+    --success-bg: #EAF5EE;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--black);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    width: 100%;
+    background: var(--orange);
+    padding: 18px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: var(--black);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon svg { width: 26px; height: 26px; }
+  .logo-text h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px; font-weight: 800;
+    color: #fff; letter-spacing: -0.3px;
+  }
+  .logo-text p {
+    font-size: 12px; color: rgba(255,255,255,0.75);
+  }
+  .header-badge {
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    font-size: 12px; font-weight: 500;
+    padding: 6px 14px; border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+
+  /* ─── MAIN LAYOUT ─── */
+  main {
+    width: 100%;
+    max-width: 960px;
+    padding: 48px 24px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .page-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 36px; font-weight: 800;
+    color: #fff; letter-spacing: -1px;
+    line-height: 1.1;
+  }
+  .page-subtitle {
+    font-size: 15px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 8px;
+  }
+
+  /* ─── STEPS BAR ─── */
+  .steps-bar {
+    display: flex; gap: 0;
+    background: rgba(255,255,255,0.06);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .step {
+    flex: 1; padding: 14px 20px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: rgba(255,255,255,0.4);
+    border-right: 1px solid rgba(255,255,255,0.08);
+    transition: all 0.3s;
+  }
+  .step:last-child { border-right: none; }
+  .step.active { color: var(--orange); background: rgba(232,106,46,0.1); }
+  .step.done { color: rgba(255,255,255,0.7); }
+  .step-num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600;
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.4);
+    flex-shrink: 0;
+  }
+  .step.active .step-num { background: var(--orange); color: #fff; }
+  .step.done .step-num { background: var(--success); color: #fff; }
+
+  /* ─── CARD ─── */
+  .card {
+    background: var(--white);
+    border-radius: 18px;
+    padding: 40px;
+    box-shadow: var(--shadow);
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px; font-weight: 700;
+    color: var(--black);
+    margin-bottom: 8px;
+  }
+  .card-desc {
+    font-size: 14px; color: var(--gray-mid);
+    margin-bottom: 32px;
+  }
+
+  /* ─── FORMS ─── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .form-group {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .form-group.full { grid-column: 1 / -1; }
+  label {
+    font-size: 13px; font-weight: 500;
+    color: var(--gray-dark);
+    display: flex; gap: 6px; align-items: center;
+  }
+  .req { color: var(--orange); }
+  input[type="text"], input[type="email"],
+  input[type="password"], input[type="tel"],
+  select, textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--gray-light);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--black);
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(232,106,46,0.1);
+  }
+  textarea { resize: vertical; min-height: 90px; }
+
+  /* ─── UPLOAD ZONE ─── */
+  .upload-zone {
+    border: 2px dashed var(--gray-light);
+    border-radius: var(--radius);
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: #FAFAF7;
+  }
+  .upload-zone:hover { border-color: var(--orange); background: var(--orange-light); }
+  .upload-zone.drag-over { border-color: var(--orange); background: var(--orange-light); }
+  .upload-zone input[type="file"] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer;
+    width: 100%; height: 100%;
+    border: none; padding: 0;
+  }
+  .upload-icon {
+    width: 52px; height: 52px;
+    background: var(--orange-light);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 14px;
+  }
+  .upload-icon svg { width: 26px; height: 26px; }
+  .upload-text { font-size: 15px; font-weight: 500; color: var(--black); }
+  .upload-hint { font-size: 12px; color: var(--gray-mid); margin-top: 4px; }
+  .upload-limit { font-size: 11px; color: var(--gray-mid); margin-top: 8px; }
+
+  /* ─── PREVIEW GRID ─── */
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .preview-item {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    border: 1.5px solid var(--gray-light);
+  }
+  .preview-item img {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .preview-remove {
+    position: absolute; top: 5px; right: 5px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.65);
+    color: #fff;
+    font-size: 13px;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* ─── SEVERITY ─── */
+  .severity-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .sev-option { display: none; }
+  .sev-label {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 8px;
+    padding: 16px 12px;
+    border: 1.5px solid var(--gray-light);
+    border-radius: var(--radius);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    font-size: 13px; color: var(--gray-dark);
+  }
+  .sev-label:hover { border-color: var(--orange); background: var(--orange-light); }
+  .sev-dot {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .sev-option:checked + .sev-label {
+    border-color: var(--orange);
+    background: var(--orange-light);
+    color: var(--orange-dark);
+    font-weight: 500;
+  }
+
+  /* ─── DIVIDER ─── */
+  .divider {
+    display: flex; align-items: center; gap: 16px;
+    margin: 24px 0;
+    color: var(--gray-mid); font-size: 13px;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--gray-light);
+  }
+
+  /* ─── BUTTONS ─── */
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: var(--orange);
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px; font-weight: 700;
+    border: none; border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    letter-spacing: 0.2px;
+  }
+  .btn-primary:hover { background: var(--orange-dark); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-secondary {
+    padding: 12px 24px;
+    background: transparent;
+    color: var(--gray-dark);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500;
+    border: 1.5px solid var(--gray-light);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--gray-mid); }
+
+  .btn-row {
+    display: flex; gap: 12px;
+    justify-content: flex-end;
+    margin-top: 28px;
+  }
+  .btn-row .btn-primary { width: auto; padding: 12px 32px; }
+
+  /* ─── LOGIN EXTRAS ─── */
+  .forgot-link {
+    text-align: right; font-size: 13px;
+    color: var(--orange); text-decoration: none;
+    cursor: pointer; margin-top: -8px;
+  }
+  .forgot-link:hover { text-decoration: underline; }
+  .login-footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 13px; color: var(--gray-mid);
+  }
+  .login-footer a { color: var(--orange); text-decoration: none; cursor: pointer; }
+
+  /* ─── SUCCESS ─── */
+  .success-view {
+    background: var(--white);
+    border-radius: 18px;
+    padding: 60px 40px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .success-icon-wrap {
+    width: 90px; height: 90px;
+    background: var(--success-bg);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 28px;
+    animation: pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  @keyframes pop {
+    from { transform: scale(0.4); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  .success-icon-wrap svg { width: 46px; height: 46px; }
+  .success-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 30px; font-weight: 800;
+    color: var(--black); margin-bottom: 10px;
+  }
+  .success-desc {
+    font-size: 15px; color: var(--gray-mid);
+    line-height: 1.6; max-width: 420px; margin: 0 auto;
+  }
+  .ticket-box {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--orange-light);
+    border: 1px solid rgba(232,106,46,0.25);
+    border-radius: 10px;
+    padding: 12px 24px;
+    margin: 28px 0;
+    font-size: 14px;
+  }
+  .ticket-label { color: var(--gray-mid); font-size: 13px; }
+  .ticket-id {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px; font-weight: 700;
+    color: var(--orange-dark);
+  }
+  .success-meta {
+    display: flex; justify-content: center; gap: 32px;
+    margin: 20px 0 36px;
+    font-size: 13px; color: var(--gray-mid);
+  }
+  .meta-item strong { display: block; color: var(--black); font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+  .success-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .success-actions .btn-primary { width: auto; }
+
+  /* ─── HIDDEN / SHOWN ─── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ─── NOTICE BOX ─── */
+  .notice {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    font-size: 13px; color: rgba(255,255,255,0.6);
+  }
+  .notice svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+
+  @media (max-width: 600px) {
+    main { padding: 24px 16px 60px; }
+    .card { padding: 28px 20px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .severity-grid { grid-template-columns: 1fr; }
+    .steps-bar { flex-direction: column; }
+    .step { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    header { padding: 14px 20px; }
+    .page-title { font-size: 26px; }
+  }
+</style>
+
+</head>
+
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-wrap">
+    <div class="logo-icon">
+      <svg viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="11" width="22" height="4" rx="1" fill="#E86A2E"/>
+        <rect x="4" y="7" width="3" height="12" rx="1" fill="#E86A2E" opacity=".6"/>
+        <rect x="19" y="7" width="3" height="12" rx="1" fill="#E86A2E" opacity=".6"/>
+        <circle cx="8" cy="18" r="2.5" fill="#fff"/>
+        <circle cx="18" cy="18" r="2.5" fill="#fff"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <h1>RoadAlert</h1>
+      <p>Municipal Road Damage Portal</p>
+    </div>
+  </div>
+  <span class="header-badge">Citizen Services</span>
+</header>
+
+<!-- MAIN -->
+<main>
+  <div>
+    <p class="page-title">Report Road Damage</p>
+    <p class="page-subtitle">Help us fix potholes & damaged roads in your area. Reports are reviewed within 48 hours.</p>
+  </div>
+
+  <!-- NOTICE -->
+  <div class="notice">
+    <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="9" cy="9" r="8" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+      <path d="M9 8v5M9 5.5v.5" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <span>Please log in with your citizen account to submit a report. Your contact details help us update you on the repair status.</span>
+  </div>
+
+  <!-- STEPS BAR -->
+  <div class="steps-bar" id="stepsBar">
+    <div class="step active" id="step1">
+      <div class="step-num">1</div>
+      <span>Login</span>
+    </div>
+    <div class="step" id="step2">
+      <div class="step-num">2</div>
+      <span>Report Details</span>
+    </div>
+    <div class="step" id="step3">
+      <div class="step-num">3</div>
+      <span>Upload Photos</span>
+    </div>
+    <div class="step" id="step4">
+      <div class="step-num">4</div>
+      <span>Confirmation</span>
+    </div>
+  </div>
+
+  <!-- ═══ VIEW 1: LOGIN ═══ -->
+  <div class="view active" id="loginView">
+    <div class="card">
+
+      <!-- Tab toggle -->
+      <div style="display:flex; background:var(--gray-light); border-radius:10px; padding:4px; margin-bottom:28px;">
+        <button id="loginTabBtn" onclick="void(0)" style="flex:1; padding:9px; border:none; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; background:#fff; color:var(--black); box-shadow:0 1px 4px rgba(0,0,0,0.08); transition:all 0.2s;">Sign In</button>
+        <button onclick="showRegister()" style="flex:1; padding:9px; border:none; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; background:transparent; color:var(--gray-mid); transition:all 0.2s;">Create Account</button>
+      </div>
+
+      <p class="card-title">Citizen Login</p>
+      <p class="card-desc">Sign in to your account to submit and track road damage reports.</p>
+
+      <div style="display:flex; flex-direction:column; gap:18px;">
+        <div class="form-group">
+          <label>Email Address <span class="req">*</span></label>
+          <input type="email" id="loginEmail" placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+          <label>Password <span class="req">*</span></label>
+          <div style="position:relative;">
+            <input type="password" id="loginPassword" placeholder="Enter your password" style="padding-right:44px;" />
+            <button onclick="togglePwd('loginPassword','eyeL')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gray-mid);font-size:16px;" id="eyeL">👁</button>
+          </div>
+        </div>
+        <a class="forgot-link" onclick="void(0)">Forgot password?</a>
+        <button class="btn-primary" onclick="doLogin()">Sign In &rarr;</button>
+      </div>
+
+      <div class="divider">or continue as</div>
+
+      <div style="display:flex; gap:12px;">
+        <button class="btn-secondary" style="flex:1" onclick="doGuestLogin()">&#128100; Guest Report</button>
+        <button class="btn-secondary" style="flex:1" onclick="showRegister()">&#43; Register</button>
+      </div>
+
+      <p class="login-footer">New here? <a onclick="showRegister()" style="color:var(--orange); cursor:pointer;">Create a free citizen account</a></p>
+    </div>
+  </div>
+
+  <!-- ═══ VIEW 1b: CREATE ACCOUNT ═══ -->
+  <div class="view" id="registerView">
+    <div class="card">
+
+      <!-- Tab toggle -->
+      <div style="display:flex; background:var(--gray-light); border-radius:10px; padding:4px; margin-bottom:28px;">
+        <button onclick="showLogin()" style="flex:1; padding:9px; border:none; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; background:transparent; color:var(--gray-mid); transition:all 0.2s;">Sign In</button>
+        <button id="regTabBtn" onclick="void(0)" style="flex:1; padding:9px; border:none; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; background:#fff; color:var(--black); box-shadow:0 1px 4px rgba(0,0,0,0.08); transition:all 0.2s;">Create Account</button>
+      </div>
+
+      <p class="card-title">Create Your Account</p>
+      <p class="card-desc">Register once to submit reports, track complaints, and get repair updates directly.</p>
+
+      <!-- Benefits strip -->
+      <div style="display:flex; gap:10px; margin-bottom:28px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:120px; background:var(--orange-light); border-radius:10px; padding:12px 14px; font-size:12px; color:var(--orange-dark);">
+          <div style="font-size:18px; margin-bottom:4px;">📋</div>
+          <strong style="display:block; margin-bottom:2px;">Track Reports</strong>
+          View all your submitted complaints
+        </div>
+        <div style="flex:1; min-width:120px; background:#EAF5EE; border-radius:10px; padding:12px 14px; font-size:12px; color:#2D7A4F;">
+          <div style="font-size:18px; margin-bottom:4px;">🔔</div>
+          <strong style="display:block; margin-bottom:2px;">Get Updates</strong>
+          SMS & email status alerts
+        </div>
+        <div style="flex:1; min-width:120px; background:#EEF2FF; border-radius:10px; padding:12px 14px; font-size:12px; color:#3730A3;">
+          <div style="font-size:18px; margin-bottom:4px;">⚡</div>
+          <strong style="display:block; margin-bottom:2px;">Faster Reports</strong>
+          Pre-filled details each time
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>First Name <span class="req">*</span></label>
+          <input type="text" id="regFirstName" placeholder="Rahul" />
+        </div>
+        <div class="form-group">
+          <label>Last Name <span class="req">*</span></label>
+          <input type="text" id="regLastName" placeholder="Sharma" />
+        </div>
+        <div class="form-group full">
+          <label>Email Address <span class="req">*</span></label>
+          <input type="email" id="regEmail" placeholder="rahul@example.com" />
+        </div>
+        <div class="form-group">
+          <label>Mobile Number <span class="req">*</span></label>
+          <input type="tel" id="regMobile" placeholder="+91 98765 43210" />
+        </div>
+        <div class="form-group">
+          <label>Date of Birth</label>
+          <input type="text" id="regDob" placeholder="DD / MM / YYYY" />
+        </div>
+        <div class="form-group full">
+          <label>Residential Address <span class="req">*</span></label>
+          <input type="text" id="regAddress" placeholder="Flat No, Street, Locality, City – PIN" />
+        </div>
+        <div class="form-group">
+          <label>Ward / Zone <span class="req">*</span></label>
+          <select id="regWard">
+            <option value="">— Select ward —</option>
+            <option>Ward 1 – Kasba Peth</option>
+            <option>Ward 2 – Baner</option>
+            <option>Ward 3 – Hadapsar</option>
+            <option>Ward 4 – Kothrud</option>
+            <option>Ward 5 – Wakad</option>
+            <option>Ward 6 – Viman Nagar</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>ID Proof Type</label>
+          <select id="regIdType">
+            <option value="">— Select ID —</option>
+            <option>Aadhaar Card</option>
+            <option>Voter ID</option>
+            <option>PAN Card</option>
+            <option>Passport</option>
+            <option>Driving Licence</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Create Password <span class="req">*</span></label>
+          <div style="position:relative;">
+            <input type="password" id="regPass" placeholder="Min. 8 characters" style="padding-right:44px;" />
+            <button onclick="togglePwd('regPass','eyeR1')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gray-mid);font-size:16px;" id="eyeR1">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Confirm Password <span class="req">*</span></label>
+          <div style="position:relative;">
+            <input type="password" id="regConfirm" placeholder="Re-enter password" style="padding-right:44px;" />
+            <button onclick="togglePwd('regConfirm','eyeR2')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gray-mid);font-size:16px;" id="eyeR2">👁</button>
+          </div>
+        </div>
+
+        <!-- Password strength -->
+        <div class="form-group full" id="strengthWrap" style="display:none;">
+          <div style="display:flex; gap:6px; align-items:center;">
+            <div style="flex:1; height:4px; border-radius:4px; background:var(--gray-light); overflow:hidden;">
+              <div id="strengthBar" style="height:100%; width:0%; border-radius:4px; transition:width 0.3s, background 0.3s;"></div>
+            </div>
+            <span id="strengthLabel" style="font-size:11px; color:var(--gray-mid); min-width:50px;"></span>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="form-group full">
+          <label style="font-size:13px; margin-bottom:10px;">Notification Preferences</label>
+          <div style="display:flex; gap:20px; flex-wrap:wrap;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:400; cursor:pointer;">
+              <input type="checkbox" id="notifEmail" checked style="width:auto; accent-color:var(--orange);"/> Email updates
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:400; cursor:pointer;">
+              <input type="checkbox" id="notifSms" checked style="width:auto; accent-color:var(--orange);"/> SMS alerts
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:400; cursor:pointer;">
+              <input type="checkbox" id="notifWhatsapp" style="width:auto; accent-color:var(--orange);"/> WhatsApp
+            </label>
+          </div>
+        </div>
+
+        <!-- Terms -->
+        <div class="form-group full">
+          <label style="display:flex; align-items:flex-start; gap:10px; font-size:13px; font-weight:400; cursor:pointer; line-height:1.5;">
+            <input type="checkbox" id="regTerms" style="width:auto; margin-top:2px; accent-color:var(--orange);"/>
+            I agree to the <a href="#" style="color:var(--orange); text-decoration:none;" onclick="return false;">Terms of Service</a> and <a href="#" style="color:var(--orange); text-decoration:none;" onclick="return false;">Privacy Policy</a> of the Municipal Road Damage Portal.
+          </label>
+        </div>
+      </div>
+
+      <!-- Error msg -->
+      <div id="regError" style="display:none; background:#FEE2E2; color:#991B1B; border-radius:8px; padding:10px 14px; font-size:13px; margin-top:12px;"></div>
+
+      <button class="btn-primary" style="margin-top:20px;" onclick="doRegister()">Create Account &amp; Continue &rarr;</button>
+
+      <p class="login-footer" style="margin-top:16px;">Already have an account? <a onclick="showLogin()" style="color:var(--orange); cursor:pointer;">Sign in here</a></p>
+    </div>
+  </div>
+
+  <!-- ═══ VIEW 1c: ACCOUNT CREATED SUCCESS ═══ -->
+  <div class="view" id="regSuccessView">
+    <div class="card" style="text-align:center; padding:52px 40px;">
+      <div style="width:80px;height:80px;background:#EEF2FF;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;animation:pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;">
+        <svg viewBox="0 0 40 40" fill="none" width="40" height="40"><circle cx="20" cy="14" r="7" stroke="#4F46E5" stroke-width="2"/><path d="M6 36c0-7.732 6.268-14 14-14s14 6.268 14 14" stroke="#4F46E5" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <p style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--black);margin-bottom:8px;">Account Created!</p>
+      <p style="font-size:14px;color:var(--gray-mid);max-width:360px;margin:0 auto 20px;line-height:1.6;">Welcome to RoadAlert, <strong id="regWelcomeName" style="color:var(--black);"></strong>! Your citizen account is ready. A verification link has been sent to your email.</p>
+
+      <div style="display:inline-block;background:var(--orange-light);border:1px solid rgba(232,106,46,0.2);border-radius:10px;padding:14px 28px;margin-bottom:28px;">
+        <div style="font-size:12px;color:var(--gray-mid);">Citizen ID</div>
+        <div id="citizenId" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--orange-dark);"></div>
+      </div>
+
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="goFromRegSuccess()">Proceed to Report &rarr;</button>
+        <button class="btn-secondary" onclick="showLogin()">Go to Login</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VIEW 2: REPORT DETAILS ═══ -->
+  <div class="view" id="reportView">
+    <div class="card">
+      <p class="card-title">Damage Report Details</p>
+      <p class="card-desc">Fill in the location and type of road damage you have observed.</p>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Full Name <span class="req">*</span></label>
+          <input type="text" id="fullName" placeholder="Rahul Sharma" />
+        </div>
+        <div class="form-group">
+          <label>Mobile Number <span class="req">*</span></label>
+          <input type="tel" id="mobileNum" placeholder="+91 98765 43210" />
+        </div>
+        <div class="form-group full">
+          <label>Exact Location / Address <span class="req">*</span></label>
+          <input type="text" id="locationAddr" placeholder="e.g. Near Shivaji Chowk, Baner Road, Pune – 411045" />
+        </div>
+        <div class="form-group">
+          <label>City / Area <span class="req">*</span></label>
+          <input type="text" id="cityArea" placeholder="Pune" />
+        </div>
+        <div class="form-group">
+          <label>Ward / Zone</label>
+          <select id="wardZone">
+            <option value="">— Select ward —</option>
+            <option>Ward 1 – Kasba Peth</option>
+            <option>Ward 2 – Baner</option>
+            <option>Ward 3 – Hadapsar</option>
+            <option>Ward 4 – Kothrud</option>
+            <option>Ward 5 – Wakad</option>
+            <option>Ward 6 – Viman Nagar</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Type of Damage <span class="req">*</span></label>
+          <select id="damageType">
+            <option value="">— Select type —</option>
+            <option>Pothole (small – &lt; 30 cm)</option>
+            <option>Pothole (large – &gt; 30 cm)</option>
+            <option>Cracked / Broken Road Surface</option>
+            <option>Cave-in / Sinkhole</option>
+            <option>Missing Manhole Cover</option>
+            <option>Waterlogging / Damaged Drain</option>
+            <option>Broken Speed Breaker</option>
+            <option>Road Marking Faded</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="form-group full">
+          <label style="margin-bottom:10px;">Severity Level <span class="req">*</span></label>
+          <div class="severity-grid">
+            <div>
+              <input class="sev-option" type="radio" name="severity" id="sevLow" value="low"/>
+              <label class="sev-label" for="sevLow">
+                <div class="sev-dot" style="background:#FEF3C7; color:#B45309; font-size:20px;">&#128511;</div>
+                <strong>Low</strong>
+                <span style="font-size:11px; color:var(--gray-mid)">Minor discomfort</span>
+              </label>
+            </div>
+            <div>
+              <input class="sev-option" type="radio" name="severity" id="sevMed" value="medium"/>
+              <label class="sev-label" for="sevMed">
+                <div class="sev-dot" style="background:#FED7AA; color:#C2410C; font-size:20px;">&#128544;</div>
+                <strong>Medium</strong>
+                <span style="font-size:11px; color:var(--gray-mid)">Traffic hazard</span>
+              </label>
+            </div>
+            <div>
+              <input class="sev-option" type="radio" name="severity" id="sevHigh" value="high"/>
+              <label class="sev-label" for="sevHigh">
+                <div class="sev-dot" style="background:#FEE2E2; color:#B91C1C; font-size:20px;">&#128548;</div>
+                <strong>High</strong>
+                <span style="font-size:11px; color:var(--gray-mid)">Accident risk</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group full">
+          <label>Description <span class="req">*</span></label>
+          <textarea id="description" placeholder="Describe the damage – size, depth, surrounding conditions. E.g. 'Large pothole approx 40 cm wide, 15 cm deep near a bus stop. Water collects inside after rain.'"></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Best Time to Inspect</label>
+          <select id="inspectTime">
+            <option>Morning (6 AM – 12 PM)</option>
+            <option>Afternoon (12 PM – 5 PM)</option>
+            <option>Evening (5 PM – 9 PM)</option>
+            <option>Any time</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="goBack()">&#8592; Back</button>
+        <button class="btn-primary" onclick="goToPhotos()">Next: Upload Photos &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VIEW 3: PHOTO UPLOAD ═══ -->
+  <div class="view" id="photoView">
+    <div class="card">
+      <p class="card-title">Upload Damage Photos</p>
+      <p class="card-desc">Clear photos help our engineers assess the damage faster. Upload up to 5 images.</p>
+
+      <div class="upload-zone" id="uploadZone"
+        ondragover="event.preventDefault(); this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="handleDrop(event)">
+        <input type="file" accept="image/*" multiple id="fileInput" onchange="handleFiles(this.files)" />
+        <div class="upload-icon">
+          <svg viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M13 17V9M9 13l4-4 4 4" stroke="#E86A2E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="3" y="4" width="20" height="18" rx="3" stroke="#E86A2E" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <p class="upload-text">Drag photos here or click to browse</p>
+        <p class="upload-hint">Supports JPG, PNG, HEIC, WEBP</p>
+        <p class="upload-limit">Max 5 files &bull; 10 MB each</p>
+      </div>
+
+      <div class="preview-grid" id="previewGrid"></div>
+
+      <div style="margin-top:24px; padding:16px; background:#F4F4F0; border-radius:10px; font-size:13px; color:var(--gray-mid);">
+        <strong style="color:var(--gray-dark); display:block; margin-bottom:6px;">&#128247; Tips for a good photo</strong>
+        <ul style="padding-left:16px; line-height:2;">
+          <li>Photograph from a standing height showing the full damage</li>
+          <li>Include a nearby landmark or signboard for reference</li>
+          <li>Take close-up and wide-angle shots if possible</li>
+        </ul>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="backToReport()">&#8592; Back</button>
+        <button class="btn-primary" onclick="submitReport()">Submit Report &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VIEW 4: SUCCESS ═══ -->
+  <div class="view" id="successView">
+    <div class="success-view">
+      <div class="success-icon-wrap">
+        <svg viewBox="0 0 46 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="23" cy="23" r="23" fill="#EAF5EE"/>
+          <path d="M13 23l7 7 13-13" stroke="#2D7A4F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <p class="success-title">Report Submitted!</p>
+      <p class="success-desc">Thank you for helping keep our roads safe. Your complaint has been registered with the Pune Municipal Corporation.</p>
+
+      <div class="ticket-box">
+        <div>
+          <div class="ticket-label">Complaint Ticket ID</div>
+          <div class="ticket-id" id="ticketId">PMC-2024-000000</div>
+        </div>
+      </div>
+
+      <div class="success-meta">
+        <div class="meta-item"><strong id="metaName">—</strong>Reported By</div>
+        <div class="meta-item"><strong id="metaLocation">—</strong>Location</div>
+        <div class="meta-item"><strong id="metaSeverity">—</strong>Severity</div>
+        <div class="meta-item"><strong id="metaPhotos">—</strong>Photos</div>
+      </div>
+
+      <p style="font-size:13px; color:var(--gray-mid); margin-bottom:28px; line-height:1.7;">
+        A confirmation will be sent to your registered email.<br/>
+        Expected review time: <strong style="color:var(--black)">24 – 48 hours</strong> &bull;
+        Estimated repair time: <strong style="color:var(--black)">7 – 14 working days</strong>
+      </p>
+
+      <div class="success-actions">
+        <button class="btn-primary" onclick="resetAll()">&#43; Submit Another Report</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  let uploadedFiles = [];
+
+  function setStep(n) {
+    for (let i = 1; i <= 4; i++) {
+      const el = document.getElementById('step' + i);
+      el.classList.remove('active', 'done');
+      if (i < n) el.classList.add('done');
+      else if (i === n) el.classList.add('active');
+    }
+  }
+
+  function showView(id) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function showRegister() {
+    showView('registerView');
+    setStep(1);
+  }
+
+  function showLogin() {
+    showView('loginView');
+    setStep(1);
+  }
+
+  function togglePwd(inputId, btnId) {
+    const inp = document.getElementById(inputId);
+    const btn = document.getElementById(btnId);
+    if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+    else { inp.type = 'password'; btn.textContent = '👁'; }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const p = document.getElementById('regPass');
+    if (p) p.addEventListener('input', updateStrength);
+  });
+
+  function updateStrength() {
+    const val = document.getElementById('regPass').value;
+    const wrap = document.getElementById('strengthWrap');
+    const bar  = document.getElementById('strengthBar');
+    const lbl  = document.getElementById('strengthLabel');
+    if (!val) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    let score = 0;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const levels = [
+      { w: '25%', bg: '#EF4444', txt: 'Weak' },
+      { w: '50%', bg: '#F97316', txt: 'Fair' },
+      { w: '75%', bg: '#EAB308', txt: 'Good' },
+      { w: '100%', bg: '#22C55E', txt: 'Strong' },
+    ];
+    const l = levels[score - 1] || levels[0];
+    bar.style.width = l.w; bar.style.background = l.bg; lbl.textContent = l.txt;
+    lbl.style.color = l.bg;
+  }
+
+  // ── REGISTER (Firebase) ──
+  async function doRegister() {
+    const first   = document.getElementById('regFirstName').value.trim();
+    const last    = document.getElementById('regLastName').value.trim();
+    const email   = document.getElementById('regEmail').value.trim();
+    const mobile  = document.getElementById('regMobile').value.trim();
+    const address = document.getElementById('regAddress').value.trim();
+    const ward    = document.getElementById('regWard').value;
+    const pass    = document.getElementById('regPass').value;
+    const confirm = document.getElementById('regConfirm').value;
+    const terms   = document.getElementById('regTerms').checked;
+    const errEl   = document.getElementById('regError');
+    errEl.style.display = 'none';
+
+    if (!first || !last || !email || !mobile || !address || !ward)
+      return showErr('Please fill all required fields.');
+    if (pass.length < 8)
+      return showErr('Password must be at least 8 characters.');
+    if (pass !== confirm)
+      return showErr('Passwords do not match.');
+    if (!terms)
+      return showErr('Please accept the Terms of Service.');
+
+    function showErr(msg) {
+      errEl.textContent = msg;
+      errEl.style.display = 'block';
+    }
+
+    try {
+      const result = await auth.createUserWithEmailAndPassword(email, pass);
+      const uid    = result.user.uid;
+      const cid    = "CIT-" + Math.floor(100000 + Math.random() * 900000);
+
+      await db.ref('users/' + uid).set({
+        citizenId    : cid,
+        firstName    : first,
+        lastName     : last,
+        email        : email,
+        mobile       : mobile,
+        address      : address,
+        ward         : ward,
+        idProof      : document.getElementById('regIdType').value,
+        notifEmail   : document.getElementById('notifEmail').checked,
+        notifSms     : document.getElementById('notifSms').checked,
+        notifWhatsapp: document.getElementById('notifWhatsapp').checked,
+        createdAt    : new Date().toISOString()
+      });
+
+      document.getElementById('citizenId').textContent      = cid;
+      document.getElementById('regWelcomeName').textContent = first + ' ' + last;
+      showView('regSuccessView');
+
+    } catch (err) {
+      let msg = err.message;
+      if (err.code === 'auth/email-already-in-use') msg = 'This email is already registered.';
+      if (err.code === 'auth/invalid-email')        msg = 'Please enter a valid email.';
+      errEl.textContent = msg;
+      errEl.style.display = 'block';
+    }
+  }
+
+  function goFromRegSuccess() {
+    setStep(2);
+    showView('reportView');
+  }
+
+  // ── LOGIN (Firebase) ──
+  async function doLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass  = document.getElementById('loginPassword').value.trim();
+    if (!email || !pass) { alert('Enter email and password.'); return; }
+
+    try {
+      const result = await auth.signInWithEmailAndPassword(email, pass);
+      console.log('✅ Login successful:', result.user.email);
+      
+      setTimeout(() => {
+        setStep(2);
+        showView('reportView');
+      }, 500);
+    } catch (err) {
+      let msg = 'Login failed.';
+      if (err.code === 'auth/user-not-found')  msg = 'No account found with this email.';
+      if (err.code === 'auth/wrong-password')  msg = 'Incorrect password.';
+      if (err.code === 'auth/invalid-email')   msg = 'Invalid email address.';
+      alert(msg);
+    }
+  }
+
+  // ── GUEST LOGIN ──
+  function doGuestLogin() {
+    setStep(2);
+    showView('reportView');
+  }
+
+  function goBack() {
+    setStep(1);
+    showView('loginView');
+  }
+
+  function backToReport() {
+    setStep(2);
+    showView('reportView');
+  }
+
+  function goToPhotos() {
+    const name   = document.getElementById('fullName').value.trim();
+    const mobile = document.getElementById('mobileNum').value.trim();
+    const loc    = document.getElementById('locationAddr').value.trim();
+    const dtype  = document.getElementById('damageType').value;
+    const sev    = document.querySelector('input[name="severity"]:checked');
+    const desc   = document.getElementById('description').value.trim();
+
+    if (!name || !mobile || !loc || !dtype || !sev || !desc) {
+      alert('Please fill in all required fields before proceeding.');
+      return;
+    }
+    setStep(3);
+    showView('photoView');
+  }
+
+  function handleFiles(files) {
+    const arr = Array.from(files);
+    const remaining = 5 - uploadedFiles.length;
+    const toAdd = arr.slice(0, remaining);
+    toAdd.forEach(f => {
+      if (f.size > 10 * 1024 * 1024) { alert(f.name + ' exceeds 10 MB limit.'); return; }
+      uploadedFiles.push(f);
+      addPreview(f);
+    });
+    document.getElementById('fileInput').value = '';
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('uploadZone').classList.remove('drag-over');
+    handleFiles(e.dataTransfer.files);
+  }
+
+  function addPreview(file) {
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const grid = document.getElementById('previewGrid');
+      const idx  = uploadedFiles.indexOf(file);
+      const item = document.createElement('div');
+      item.className = 'preview-item';
+      item.id = 'preview-' + idx;
+      item.innerHTML = `<img src="${ev.target.result}" alt="photo"/>
+        <button class="preview-remove" onclick="removePhoto(${idx})" title="Remove">&times;</button>`;
+      grid.appendChild(item);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removePhoto(idx) {
+    uploadedFiles.splice(idx, 1);
+    document.getElementById('previewGrid').innerHTML = '';
+    uploadedFiles.forEach((f, i) => addPreview(f));
+  }
+
+  // ── UPLOAD PHOTO TO CLOUDINARY ──
+  async function uploadToCloudinary(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'roadalert_upload');
+    formData.append('cloud_name', 'dtuctfqn4');  // ← REPLACE WITH YOUR CLOUD NAME
+
+    const res  = await fetch(
+      'https://api.cloudinary.com/v1_1/dtuctfqn4/image/upload',  // ← REPLACE WITH YOUR CLOUD NAME
+      { method: 'POST', body: formData }
+    );
+    const data = await res.json();
+    return data.secure_url;
+  }
+
+  // ── SUBMIT REPORT (Fixed Auth) ──
+  async function submitReport() {
+    console.log('submitReport called');
+    
+    // Check if user is logged in or wait for auth
+    let user = currentAuthUser;
+    
+    if (!user) {
+      console.log('No user found, attempting auth check...');
+      return new Promise((resolve) => {
+        const unsubscribe = auth.onAuthStateChanged((authUser) => {
+          unsubscribe();
+          
+          if (!authUser) {
+            alert('Please log in first to submit a report.');
+            resolve();
+            return;
+          }
+          
+          user = authUser;
+          doSubmit(user);
+          resolve();
+        });
+      });
+    }
+    
+    doSubmit(user);
+  }
+
+  async function doSubmit(user) {
+    console.log('User authenticated:', user.email);
+    
+    const btn = document.querySelector('#photoView .btn-primary');
+    btn.textContent = 'Uploading photos...';
+    btn.disabled = true;
+
+    try {
+      console.log('Starting photo upload...');
+      
+      const photoUrls = [];
+      for (const file of uploadedFiles) {
+        console.log('Uploading file:', file.name);
+        const url = await uploadToCloudinary(file);
+        console.log('File uploaded, URL:', url);
+        photoUrls.push(url);
+      }
+
+      console.log('All photos uploaded:', photoUrls);
+
+      const ticketId = 'PMC-' + new Date().getFullYear() + '-' +
+                       Math.floor(100000 + Math.random() * 900000);
+      const sev = document.querySelector('input[name="severity"]:checked');
+
+      console.log('Saving to database with ticket:', ticketId);
+
+      await db.ref('reports/' + ticketId).set({
+        ticketId        : ticketId,
+        userId          : user.uid,
+        fullName        : document.getElementById('fullName').value,
+        mobile          : document.getElementById('mobileNum').value,
+        locationAddress : document.getElementById('locationAddr').value,
+        city            : document.getElementById('cityArea').value,
+        ward            : document.getElementById('wardZone').value,
+        damageType      : document.getElementById('damageType').value,
+        severity        : sev ? sev.value : '',
+        description     : document.getElementById('description').value,
+        inspectTime     : document.getElementById('inspectTime').value,
+        photoUrls       : photoUrls,
+        status          : 'Pending',
+        submittedAt     : new Date().toISOString()
+      });
+
+      console.log('✅ Report saved successfully!');
+
+      const loc = document.getElementById('locationAddr').value;
+      document.getElementById('ticketId').textContent     = ticketId;
+      document.getElementById('metaName').textContent     = document.getElementById('fullName').value;
+      document.getElementById('metaLocation').textContent = loc.length > 22 ? loc.slice(0,22)+'…' : loc;
+      document.getElementById('metaSeverity').textContent = sev ? sev.value : '—';
+      document.getElementById('metaPhotos').textContent   = uploadedFiles.length + ' uploaded';
+      setStep(4);
+      showView('successView');
+
+    } catch (err) {
+      console.error('Error:', err.message);
+      alert('Error: ' + err.message);
+      
+      const btn = document.querySelector('#photoView .btn-primary');
+      btn.textContent = 'Submit Report →';
+      btn.disabled = false;
+    }
+  }
+
+  function resetAll() {
+    uploadedFiles = [];
+    document.getElementById('previewGrid').innerHTML = '';
+    ['loginEmail','loginPassword','fullName','mobileNum','locationAddr','cityArea','description','damageType',
+     'regFirstName','regLastName','regEmail','regMobile','regAddress','regPass','regConfirm'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.querySelectorAll('input[name="severity"]').forEach(r => r.checked = false);
+    document.getElementById('regWard').value = '';
+    document.getElementById('regError').style.display = 'none';
+    document.getElementById('strengthWrap').style.display = 'none';
+    setStep(1);
+    showView('loginView');
+  }
+</script>
+
+</body>
+</html>
+
