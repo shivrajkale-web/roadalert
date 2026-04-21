@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadAlert Admin | Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background: #0f172a; }
+        
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .road-gradient {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        }
+        
+        .glow-orange {
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+        }
+        
+        .status-pending { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
+        .status-progress { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .status-resolved { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        
+        .report-card {
+            transition: all 0.3s ease;
+        }
+        .report-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+        
+        .loading-skeleton {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #f97316; }
+    </style>
+</head>
+<body class="text-gray-100 min-h-screen">
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900">
+        <div class="glass-panel p-8 rounded-2xl w-full max-w-md mx-4 glow-orange">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 road-gradient rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-shield-alt text-2xl text-white"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white">RoadAlert Admin</h1>
+                <p class="text-gray-400 mt-2">Command Center Access</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Admin Email</label>
+                    <input type="email" id="adminEmail" required 
+                        class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:border-orange-500 text-white placeholder-gray-500"
+                        placeholder="admin@roadalert.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                    <input type="password" id="adminPassword" required 
+                        class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:border-orange-500 text-white placeholder-gray-500"
+                        placeholder="••••••••">
+                </div>
+                <button type="submit" 
+                    class="w-full road-gradient text-white font-semibold py-3 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Access Dashboard</span>
+                </button>
+            </form>
+            <p id="loginError" class="text-red-400 text-sm mt-4 text-center hidden"></p>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="hidden">
+        <!-- Sidebar -->
+        <aside class="fixed left-0 top-0 h-full w-64 bg-slate-900 border-r border-slate-800 z-40 hidden md:block">
+            <div class="p-6 border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 road-gradient rounded-lg flex items-center justify-center">
+                        <i class="fas fa-road text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg">RoadAlert</h1>
+                        <p class="text-xs text-orange-400">Admin Panel</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="p-4 space-y-2">
+                <button onclick="filterReports('all')" class="w-full text-left px-4 py-3 rounded-lg bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center gap-3">
+                    <i class="fas fa-chart-line"></i>
+                    <span>All Reports</span>
+                </button>
+                <button onclick="filterReports('pending')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 text-gray-400 hover:text-white flex items-center gap-3 transition-colors">
+                    <i class="fas fa-clock"></i>
+                    <span>Pending</span>
+                    <span id="pendingCount" class="ml-auto bg-yellow-500/20 text-yellow-400 text-xs px-2 py-1 rounded-full">0</span>
+                </button>
+                <button onclick="filterReports('progress')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 text-gray-400 hover:text-white flex items-center gap-3 transition-colors">
+                    <i class="fas fa-tools"></i>
+                    <span>In Progress</span>
+                </button>
+                <button onclick="filterReports('resolved')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 text-gray-400 hover:text-white flex items-center gap-3 transition-colors">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Resolved</span>
+                </button>
+            </nav>
+            
+            <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-800">
+                <button onclick="logout()" class="w-full px-4 py-2 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors flex items-center gap-2">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Mobile Header -->
+        <div class="md:hidden fixed top-0 left-0 right-0 bg-slate-900 border-b border-slate-800 z-40 px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 road-gradient rounded flex items-center justify-center">
+                    <i class="fas fa-road text-white text-sm"></i>
+                </div>
+                <span class="font-bold">RoadAlert Admin</span>
+            </div>
+            <button onclick="logout()" class="text-red-400">
+                <i class="fas fa-sign-out-alt text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <main class="md:ml-64 pt-16 md:pt-0 min-h-screen">
+            <!-- Stats Bar -->
+            <div class="p-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="glass-panel p-6 rounded-xl border-l-4 border-orange-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-400 text-sm">Total Reports</p>
+                            <h3 id="totalReports" class="text-3xl font-bold mt-1">-</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                            <i class="fas fa-inbox text-orange-500"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-panel p-6 rounded-xl border-l-4 border-yellow-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-400 text-sm">Pending</p>
+                            <h3 id="pendingReports" class="text-3xl font-bold mt-1 text-yellow-400">-</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+                            <i class="fas fa-clock text-yellow-500"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-panel p-6 rounded-xl border-l-4 border-blue-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-400 text-sm">In Progress</p>
+                            <h3 id="progressReports" class="text-3xl font-bold mt-1 text-blue-400">-</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                            <i class="fas fa-tools text-blue-500"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-panel p-6 rounded-xl border-l-4 border-green-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-400 text-sm">Resolved</p>
+                            <h3 id="resolvedReports" class="text-3xl font-bold mt-1 text-green-400">-</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                            <i class="fas fa-check-circle text-green-500"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters & Search -->
+            <div class="px-6 mb-6">
+                <div class="glass-panel p-4 rounded-xl flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <select id="statusFilter" onchange="applyFilters()" class="bg-slate-800 border border-slate-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:border-orange-500">
+                            <option value="all">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="resolved">Resolved</option>
+                        </select>
+                        <select id="severityFilter" onchange="applyFilters()" class="bg-slate-800 border border-slate-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:border-orange-500">
+                            <option value="all">All Severity</option>
+                            <option value="high">High Priority</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                    <div class="relative w-full md:w-96">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="searchInput" onkeyup="applyFilters()" 
+                            placeholder="Search by location or description..." 
+                            class="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:border-orange-500 text-white">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Grid -->
+            <div id="reportsContainer" class="px-6 pb-6 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                <!-- Reports will be injected here -->
+            </div>
+            
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden px-6 pb-6 text-center py-20">
+                <div class="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-clipboard-check text-4xl text-gray-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-300">No reports found</h3>
+                <p class="text-gray-500 mt-2">Try adjusting your filters</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Report Detail Modal -->
+    <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl">
+            <div class="p-6 border-b border-slate-700 flex justify-between items-center">
+                <h2 class="text-2xl font-bold">Report Details</h2>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full hover:bg-slate-700 flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="modalContent" class="p-6">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // YOUR FIREBASE CONFIGURATION - ALREADY SET
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDBNgZ87_U_3zJ-xK_IyPAgrNNHLRwJapA",
+            authDomain: "roadalert-bdf60.firebaseapp.com",
+            databaseURL: "https://roadalert-bdf60-default-rtdb.firebaseio.com",
+            projectId: "roadalert-bdf60",
+            storageBucket: "roadalert-bdf60.firebasestorage.app",
+            messagingSenderId: "545933579660",
+            appId: "1:545933579660:web:33daf1eee2447d8d89b2a9"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        let currentFilter = 'all';
+        let allReports = [];
+
+        // Check auth state
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                loadReports();
+            } else {
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('dashboard').classList.add('hidden');
+            }
+        });
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                document.getElementById('loginError').textContent = error.message;
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        });
+
+        // Logout
+        function logout() {
+            auth.signOut();
+        }
+
+        // Load Reports
+        function loadReports() {
+            db.collection('reports').orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
+                allReports = [];
+                snapshot.forEach((doc) => {
+                    allReports.push({ id: doc.id, ...doc.data() });
+                });
+                updateStats();
+                applyFilters();
+            });
+        }
+
+        // Update Statistics
+        function updateStats() {
+            const total = allReports.length;
+            const pending = allReports.filter(r => r.status === 'pending' || !r.status).length;
+            const progress = allReports.filter(r => r.status === 'in-progress').length;
+            const resolved = allReports.filter(r => r.status === 'resolved').length;
+
+            document.getElementById('totalReports').textContent = total;
+            document.getElementById('pendingReports').textContent = pending;
+            document.getElementById('progressReports').textContent = progress;
+            document.getElementById('resolvedReports').textContent = resolved;
+            document.getElementById('pendingCount').textContent = pending;
+        }
+
+        // Render Reports
+        function renderReports(reports) {
+            const container = document.getElementById('reportsContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            container.innerHTML = '';
+            
+            if (reports.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            reports.forEach(report => {
+                const status = report.status || 'pending';
+                const statusClass = {
+                    'pending': 'status-pending',
+                    'in-progress': 'status-progress',
+                    'resolved': 'status-resolved'
+                }[status] || 'status-pending';
+
+                const statusIcon = {
+                    'pending': 'fa-clock',
+                    'in-progress': 'fa-tools',
+                    'resolved': 'fa-check-circle'
+                }[status] || 'fa-clock';
+
+                const card = document.createElement('div');
+                card.className = 'glass-panel rounded-xl overflow-hidden report-card';
+                
+                const desc = report.description ? (report.description.length > 100 ? report.description.substring(0, 100) + '...' : report.description) : 'No description';
+                
+                const date = report.timestamp ? new Date(report.timestamp.toDate()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit' }) : 'Unknown date';
+                
+                const imageHtml = report.imageUrl ? 
+                    `<img src="${report.imageUrl}" class="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open('${report.imageUrl}', '_blank')">` :
+                    `<div class="w-full h-48 bg-slate-800 flex items-center justify-center text-gray-500"><i class="fas fa-image text-4xl"></i></div>`;
+
+                card.innerHTML = `
+                    <div class="relative">
+                        ${imageHtml}
+                        <div class="absolute top-2 right-2">
+                            <span class="${statusClass} px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                                <i class="fas ${statusIcon}"></i>
+                                ${status.replace('-', ' ').toUpperCase()}
+                            </span>
+                        </div>
+                        ${report.severity === 'high' ? '<div class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold"><i class="fas fa-exclamation-triangle"></i> HIGH PRIORITY</div>' : ''}
+                    </div>
+                    <div class="p-5">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center gap-2 text-orange-400">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span class="text-sm font-medium">${report.location || 'Unknown Location'}</span>
+                            </div>
+                            <span class="text-xs text-gray-500">${date}</span>
+                        </div>
+                        <p class="text-gray-300 text-sm mb-4 line-clamp-2">${desc}</p>
+                        <div class="flex gap-2">
+                            <button onclick="viewDetail('${report.id}')" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm transition-colors">
+                                <i class="fas fa-eye mr-1"></i> View
+                            </button>
+                            <select onchange="updateStatus('${report.id}', this.value)" class="bg-slate-800 border border-slate-700 text-white text-sm px-3 rounded-lg focus:outline-none focus:border-orange-500">
+                                <option value="pending" ${status === 'pending' ? 'selected' : ''}>Pending</option>
+                                <option value="in-progress" ${status === 'in-progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="resolved" ${status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Filter Functions
+        function filterReports(type) {
+            currentFilter = type;
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const severityFilter = document.getElementById('severityFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            let filtered = allReports;
+
+            if (currentFilter !== 'all') {
+                filtered = filtered.filter(r => (r.status || 'pending') === currentFilter);
+            }
+            if (statusFilter !== 'all') {
+                filtered = filtered.filter(r => (r.status || 'pending') === statusFilter);
+            }
+
+            if (severityFilter !== 'all') {
+                filtered = filtered.filter(r => r.severity === severityFilter);
+            }
+
+            if (searchTerm) {
+                filtered = filtered.filter(r => 
+                    (r.location && r.location.toLowerCase().includes(searchTerm)) ||
+                    (r.description && r.description.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            renderReports(filtered);
+        }
+
+        // Update Status
+        async function updateStatus(reportId, newStatus) {
+            try {
+                await db.collection('reports').doc(reportId).update({
+                    status: newStatus,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                console.error('Error updating status:', error);
+                alert('Error updating status');
+            }
+        }
+
+        // View Detail Modal
+        async function viewDetail(reportId) {
+            const report = allReports.find(r => r.id === reportId);
+            if (!report) return;
+
+            const modal = document.getElementById('detailModal');
+            const content = document.getElementById('modalContent');
+            
+            const date = report.timestamp ? new Date(report.timestamp.toDate()).toLocaleString() : 'Unknown';
+            
+            content.innerHTML = `
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        ${report.imageUrl ? 
+                            `<img src="${report.imageUrl}" class="w-full rounded-lg shadow-lg">` : 
+                            '<div class="w-full h-64 bg-slate-800 rounded-lg flex items-center justify-center text-gray-500">No Image</div>'
+                        }
+                        <div class="mt-4 flex gap-2">
+                            ${report.imageUrl ? `<a href="${report.imageUrl}" target="_blank" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white text-center py-2 rounded-lg transition-colors"><i class="fas fa-external-link-alt mr-2"></i>View Full Image</a>` : ''}
+                            <button onclick="deleteReport('${reportId}')" class="px-4 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold ${report.status === 'resolved' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}">
+                                ${(report.status || 'pending').toUpperCase()}
+                            </span>
+                            ${report.severity === 'high' ? '<span class="px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-400">HIGH PRIORITY</span>' : ''}
+                        </div>
+                        
+                        <h3 class="text-lg font-semibold mb-2 text-orange-400"><i class="fas fa-map-marker-alt mr-2"></i>Location</h3>
+                        <p class="text-gray-300 mb-4 bg-slate-800 p-3 rounded-lg">${report.location || 'Not specified'}</p>
+                        
+                        <h3 class="text-lg font-semibold mb-2 text-orange-400"><i class="fas fa-align-left mr-2"></i>Description</h3>
+                        <p class="text-gray-300 mb-4 bg-slate-800 p-3 rounded-lg whitespace-pre-wrap">${report.description || 'No description provided'}</p>
+                        
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-400 mb-1">Reported By</h4>
+                                <p class="text-white">${report.reporterName || 'Anonymous'}</p>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-400 mb-1">Contact</h4>
+                                <p class="text-white">${report.reporterContact || 'Not provided'}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t border-slate-700 pt-4 mt-4">
+                            <p class="text-sm text-gray-500">Report ID: <span class="font-mono text-gray-400">${reportId}</span></p>
+                            <p class="text-sm text-gray-500">Submitted: ${date}</p>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Update Status</label>
+                            <div class="flex gap-2">
+                                <select id="modalStatus" class="flex-1 bg-slate-800 border border-slate-700 text-white px-4 py-2 rounded-lg">
+                                    <option value="pending" ${report.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                    <option value="in-progress" ${report.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
+                                    <option value="resolved" ${report.status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                                </select>
+                                <button onclick="updateStatusFromModal('${reportId}')" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-colors">
+                                    Update
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+
+        function updateStatusFromModal(reportId) {
+            const newStatus = document.getElementById('modalStatus').value;
+            updateStatus(reportId, newStatus);
+            closeModal();
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        async function deleteReport(reportId) {
+            if (confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+                try {
+                    await db.collection('reports').doc(reportId).delete();
+                    closeModal();
+                } catch (error) {
+                    alert('Error deleting report: ' + error.message);
+                }
+            }
+        }
+
+        // Close modal on outside click
+        document.getElementById('detailModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('detailModal')) {
+                closeModal();
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
+</body>
+</html>
